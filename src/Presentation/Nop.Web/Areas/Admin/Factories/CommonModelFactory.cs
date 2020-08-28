@@ -449,12 +449,14 @@ namespace Nop.Web.Areas.Admin.Factories
             }
 
             //check whether there are different plugins which try to override the same interface
+            var baseLibraries = new[] { "Nop.Core", "Nop.Data", "Nop.Services", "Nop.Web", "Nop.Web.Framework" };
             var overridenServices = _componentContext.ComponentRegistry.Registrations.Where(p =>
                     p.Services.Any(s =>
                         s.Description.StartsWith("Nop.", StringComparison.InvariantCulture) &&
                         !s.Description.StartsWith(typeof(IConsumer<>).FullName?.Replace("~1", string.Empty) ?? string.Empty,
                             StringComparison.InvariantCulture))).SelectMany(p => p.Services.Select(x =>
                     KeyValuePair.Create(x.Description, p.Target.Activator.LimitType.Assembly.GetName().Name)))
+                .Where(p => baseLibraries.All(library=> !p.Value.StartsWith(library, StringComparison.InvariantCultureIgnoreCase)))
                 .GroupBy(p => p.Key, p => p.Value)
                 .Where(p => p.Count() > 1)
                 .ToDictionary(p => p.Key, p => p.ToList());
